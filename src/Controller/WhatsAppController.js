@@ -1,15 +1,36 @@
 import { Format } from './../ultil/Format.js';
 import { CameraController } from './CameraController.js';
+import { MicrophoneController } from './MicrophoneController.js';
 import { DocumentPreviewController } from './DocumentPreviewController.js';
+
+import { Firebase } from '../ultil/Firebase';
 
 
 export class WhatsAppController {
   constructor() {
-    console.log("ok");
 
+    this._firebase = new Firebase();
     this.elementPrototype();
+
+    // metodo para carregar os 75 ids principais do projeto
+    // e transformar em camelCase cada um deles para uso posterior
     this.loadElements();
+
+    // método para inciar todos os eventos criados
     this.initEvents();
+
+    console.log(this._firebase);
+  }
+
+  /** */
+  initAuth() {
+    this._firebase.initAuth().then(response => {
+
+      console.log('response', response);
+
+    }).catch(err => {
+      console.error(err);
+    });
   }
 
   loadElements() {
@@ -169,6 +190,7 @@ export class WhatsAppController {
 
       this._camera = new CameraController(this.el.videoCamera);
     });
+
     //METODO PARA TIRA FOTOS
     this.el.btnClosePanelCamera.on("click", e => {
 
@@ -212,35 +234,77 @@ export class WhatsAppController {
 
       this.closeAllMainPanel();
       this.el.panelDocumentPreview.addClass("open");
-      this.el.panelDocumentPreview.css({
-        height: "calc(100% - 120px)"
-      });
 
+
+      this.el.panelDocumentPreview.css({
+        'height': 'calc(100% - 120px)'
+      });
       this.el.inputDocument.click();
 
     });
     //CRIANDO METODO PARA ABRIR DOCUMENTOS
     this.el.inputDocument.on('change', e => {
-
       if (this.el.inputDocument.files.length) {
+        this.el.panelDocumentPreview.css({
+          'height': '1%'
+        });
+
 
         let file = this.el.inputDocument.files[0];
 
+        //isso ira pre vizualizar os documentos
         this._documentPreviewController = new DocumentPreviewController(file);
 
-        this._documentPreviewController.getPreviewData().then(data => {
+        this._documentPreviewController.getPreviewData().then(result => {
 
-          console.log('ok', data);
-
+          this.el.imgPanelDocumentPreview.src = result.src;
+          this.el.infoPanelDocumentPreview.innerHTML = result.info;
+          this.el.imagePanelDocumentPreview.show();
+          this.el.filePanelDocumentPreview.hide();
+          this.el.panelDocumentPreview.css({
+            'height': 'calc(100% - 120px)'
+          });
         }).catch(err => {
-          console.log('erro caio aqui', err);
-        });
+          this.el.panelDocumentPreview.css({
+            'height': 'calc(100% - 120px)'
+          });
 
+          //TRATAR ERRO PARA ABRIR OUTROS ARQUIVOS
+          switch (file.type) {
+
+            case 'application/vnd.ms-execel':
+            case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+
+              this.el.iconPanelDocumentPreview.className = 'jcxhw icon-doc-xls'; // isso ira ler arquivos EXCEL
+              break;
+
+            case 'application/vnd.ms-powerpoint':
+            case 'application/text/plain':
+              this.el.iconPanelDocumentPreview.className = 'jcxhw icon-doc-ppt'; // isso ira ler arquivos power POINT
+              break;
+
+            case 'application/msword':
+            case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+              this.el.iconPanelDocumentPreview.className = 'jcxhw icon-doc-doc'; // isso ira ler arquivos WORDS
+              break;
+
+            default:
+              this.el.iconPanelDocumentPreview.className = 'jcxhw icon-doc-genereic';
+
+              break;
+          }
+          this.el.filenamePanelDocumentPreview.innerHTML = file.name;
+          this.el.imagePanelDocumentPreview.hide();
+          this.el.filePanelDocumentPreview.show();
+        });
       }
     });
 
+
+
     this.el.btnClosePanelDocumentPreview.on("click", e => {
       this.closeAllMainPanel();
+
       this.el.panelMessagesContainer.show();
     });
 
@@ -261,15 +325,34 @@ export class WhatsAppController {
     this.el.btnSendMicrophone.on("click", e => {
       this.el.recordMicrophone.show();
       this.el.btnSendMicrophone.hide();
-      this.startRecordMicrophoneTime();
+
+      this._microphoneController = new MicrophoneController();
+
+      this._microphoneController.on('ready', audio => {
+
+        console.log('READY', audio);
+
+        this._microphoneController.startRecorder();
+
+      });
+
+      this._microphoneController.on('recordtimer', timer => {
+
+        this.el.recordMicrophoneTimer.innerHTML = Format.toTimer(start);
+      });
     });
 
     //METEODO PARA CANCELA O AUDIO
     this.el.btnCancelMicrophone.on("click", e => {
+
+      this._microphoneController.stopRecorder();
       this.closeRecordMicrophone();
     });
+
     //METEODO PARA MANDA O AUIDO
     this.el.btnFinishMicrophone.on("click", e => {
+
+      this._microphoneController.stopRecorder();
       this.closeRecordMicrophone();
     });
 
@@ -352,20 +435,9 @@ export class WhatsAppController {
 
   }
 
-  startRecordMicrophoneTime() {
-    let start = Date.now();
-
-    this._recordMicrophoneInterval = setInterval(() => {
-      this.el.recordMicrophoneTimer.innerHTML = Format.toTimer(
-        Date.now() - start
-      );
-    }, 100);
-  }
-
   closeRecordMicrophone() {
     this.el.recordMicrophone.hide();
     this.el.btnSendMicrophone.show();
-    clearInterval(this._recordMicrophoneInterval);
   }
 
   closeAllMainPanel() {
