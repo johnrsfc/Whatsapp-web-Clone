@@ -1,4 +1,4 @@
-import { ClassEvent } from '../ultil/ClassEvent';
+import { ClassEvent } from '../utils/ClassEvent';
 
 export class MicrophoneController extends ClassEvent {
 
@@ -64,7 +64,7 @@ export class MicrophoneController extends ClassEvent {
                     type: this._mimeType
                 });
 
-                let filename = `rec${Data.now()}.webm`;
+                let filename = `rec${Date.now()}.webm`;
 
                 let file = new File([blob], filename, {
                     type: this._mimeType,

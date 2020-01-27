@@ -1,37 +1,72 @@
-import { Format } from './../ultil/Format.js';
-import { CameraController } from './CameraController.js';
-import { MicrophoneController } from './MicrophoneController.js';
-import { DocumentPreviewController } from './DocumentPreviewController.js';
+import { Format } from '../utils/Format';
+import { CameraController } from './CameraController';
+import { MicrophoneController } from './MicrophoneController';
+import { DocumentPreviewController } from './DocumentPreviewController';
 
-import { Firebase } from '../ultil/Firebase';
+import { Firebase } from '../utils/Firebase';
+import { User } from '../Model/User';
 
 
 export class WhatsAppController {
   constructor() {
 
-    this._firebase = new Firebase();
-    this.elementPrototype();
+    this._firebase = new Firebase();//CONEXÇÃO COM BANCO DE DADOS
+    this.initAuth();
 
+    this.elementPrototype();
     // metodo para carregar os 75 ids principais do projeto
     // e transformar em camelCase cada um deles para uso posterior
     this.loadElements();
-
-    // método para inciar todos os eventos criados
-    this.initEvents();
-
-    console.log(this._firebase);
+    this.initEvents();// método para inciar todos os eventos criados
   }
 
-  /** */
   initAuth() {
-    this._firebase.initAuth().then(response => {
+    this._firebase.initAuth()
+      .then(response => {
 
-      console.log('response', response);
+        this._user = new User(response.user.email);
 
-    }).catch(err => {
-      console.error(err);
-    });
+        this._user.on('datachange', data => {
+
+          document.querySelector('title').innerHTML = data.name + ' - WhatsApp Clone';
+
+          this.el.inputNamePanelEditProfile.innerHTML = data.name;
+
+          if (data.photo) {
+
+            let photo = this.el.imgPanelEditProfile;
+            photo.src = data.photo;
+            photo.show();
+            this.el.imgDefaultPanelEditProfile.hide();
+
+
+            let photo2 = this.el.myPhoto.querySelector('img');
+            photo2.src = data.photo;
+            photo2.show();
+          }
+
+        });
+
+        this._user.name = response.user.displayName;
+        this._user.email = response.user.email;
+        this._user.photo = response.user.photoURL;
+
+
+        this._user.save().then(() => {
+          this.el.appContent.css({
+            display: 'flex'
+          });
+
+        });
+
+
+      })
+      .catch(err => {
+        console.error(err);
+      });
+
   }
+
 
   loadElements() {
     this.el = {};
@@ -48,17 +83,17 @@ export class WhatsAppController {
     };
 
     Element.prototype.show = function () {
-      this.style.display = "block";
+      this.style.display = 'block';
       return this;
     };
 
     Element.prototype.toggle = function () {
-      this.style.display = this.style.display === "none" ? "block" : "none";
+      this.style.display = this.style.display === 'none' ? 'block' : 'none';
       return this;
     };
 
     Element.prototype.on = function (events, fn) {
-      events.split(" ").forEach(event => {
+      events.split('').forEach(event => {
         this.addEventListener(event, fn);
       });
       return this;
@@ -94,12 +129,10 @@ export class WhatsAppController {
       return new FormData(this);
     };
 
-    HTMLFormElement.prototype.toJson = function () {
+    HTMLFormElement.prototype.toJSON = function () {
       let json = {};
 
-      this.getFor().forEach((value, key) => {
-        json[key] = value;
-      });
+      this.getFor().forEach((value, key) => json[key] = value);
 
       return json;
     };

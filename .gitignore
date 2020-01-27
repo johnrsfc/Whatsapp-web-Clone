@@ -1,4 +1,3 @@
 #ignorando aqrquivos desnecessarios
 node_modules/
-*.json
 
