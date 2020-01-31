@@ -11,7 +11,7 @@ export class Firebase {
             authDomain: "clone-zap-7d4e3.firebaseapp.com",
             databaseURL: "https://clone-zap-7d4e3.firebaseio.com",
             projectId: "clone-zap-7d4e3",
-            storageBucket: "clone-zap-7d4e3.appspot.com",
+            storageBucket: "gs://clone-zap-7d4e3.appspot.com",
             messagingSenderId: "625322087421",
             appId: "1:625322087421:web:a2a44de41bec0c9892bf94",
             measurementId: "G-VN6322B1BC"

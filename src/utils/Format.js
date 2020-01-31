@@ -21,4 +21,17 @@ export class Format {
       return `${minutes} : ${seconds.toString().padStart(2, "0")}`;
     }
   }
+
+  static dateToTime(date, locale = 'pt-br') {
+
+    return date.toLocaleTimeString(locale, {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  static timeStampToTime(timeStamp) {
+
+    return (timeStamp && typeof timeStamp.toDate === 'function') ? Format.dateToTime(timeStamp.toDate()) : '';
+  }
 }
