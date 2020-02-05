@@ -6,7 +6,7 @@
 
 
 
-<img alt="Whatasapp Web" src="/img/zap-clone.png"
+<img alt="Whatasapp Web" src="/img/zap-clone.png">
 
 <h3 align="center">Resources Used for Project Development
 
