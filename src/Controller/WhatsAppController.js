@@ -7,6 +7,7 @@ import { Firebase } from '../utils/Firebase';
 import { User } from '../Model/User';
 import { Chat } from '../Model/Chat';
 import { Message } from "../Model/Message";
+import { Base64 } from '../utils/Base4';
 
 
 export class WhatsAppController {
@@ -89,7 +90,7 @@ export class WhatsAppController {
         div.innerHTML = `
   <div class="dIyEr">
       <div class="_1WliW" style="height: 49px; width: 49px;">
-          <img src="#" class="Qgzj8 gqwaM photo">
+          <img src="#" class="Qgzj8 gqwaM photo" style="display:none;">
           <div class="_3ZW2E">
               <span data-icon="default-user" class="">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 212 212" width="212" height="212">
@@ -179,7 +180,7 @@ export class WhatsAppController {
     //isso ira verificar se o usuario tem foto pra pode atualizar no CHAT
     if (contact.photo) {
       let img = this.el.activePhoto;
-      img.src;
+      img.src = contact.photo;
       img.show();
     }
     this.el.main.css({
@@ -224,7 +225,14 @@ export class WhatsAppController {
 
           this.el.panelMessagesContainer.appendChild(view);
 
-        } else if (me) {
+        } else {
+
+          let view = message.getViewElement(me);
+          this.el.panelMessagesContainer.querySelector('#_' + data.id).innerHTML = view.innerHTML;
+
+
+        }
+        if (this.el.panelMessagesContainer.querySelector('#_' + data.id) && me) {
           let msgEl = this.el.panelMessagesContainer.querySelector('#_' + data.id);
 
           msgEl.querySelector('.message-status').innerHTML = message.getStatusViewElement().outerHTML;
@@ -481,10 +489,53 @@ export class WhatsAppController {
 
 
     });
-
+    //METEODO PARA TIRAR FOTO NA WEB CAM
     this.el.btnSendPicture.on('click', e => {
 
-      console.log(this.el.pictureCamara.src);
+      this.el.btnSendPicture.disabled = true;
+
+      let regex = /^data:(.+);base64,(.*)$/;
+      let result = this.el.pictureCamara.src.match(regex);
+      let mimeType = result[1];
+      let ext = mimeType.split('/')[1];
+      let filename = `camera${Date.now()}.${ext}`;
+
+      let picture = new Image();
+      picture.src = his.el.pictureCamara.src;
+      picture.onload = e => {
+
+        //METEODO PARA DESENHA A IMAGE/ POIS SEM ESSE METEODO A IMAGE IRA FICAR INVERTIDA
+        let canvas = document.createElement('canvas');
+        let context = canvas.getContext('2d');
+
+        canvas.width = picute.width;
+        canvas.height = picute.height;
+
+        context.translet(picture.width, 0);
+        context.scale(-1, 1);
+
+        context.drawImage(picture, 0, 0, canvas.width, canvas.height);
+
+        fetch(canvas.toDataURL('mimeType'))
+          .then(res => { return res.arrayBuffer(); })
+          .then(buffer => { return new File([buffer], filename, { type: mimeType }) })
+          .then(file => {
+            Message.sendImage(this._contactActive.chatId, this._user.email, file);
+
+            this.el.btnSendPicture.disabled = false;
+
+            this.closeAllMainPanel();
+            this._camera.stop();
+            this.el.btnReshootPanelCamera.hide();
+            this.el.pictureCamara.hide();
+            this.el.videoCamera.show();
+            this.el.containerSendPicture.hide();
+            this.el.containerTakePicture.show();
+            this.el.panelMessagesContainer.show();
+          });
+
+      }
+
     });
 
     this.el.btnReshootPanelCamera.on('click', e => {
@@ -569,15 +620,40 @@ export class WhatsAppController {
     });
 
 
-
+    //METODO PARA FECHAR O PAINEL ASSIM QUE ENVIAR UM DOCUMENTO
     this.el.btnClosePanelDocumentPreview.on("click", e => {
       this.closeAllMainPanel();
 
       this.el.panelMessagesContainer.show();
     });
-
+    //METODO PARA ENVIAR DOCUMENTOS
     this.el.btnSendDocument.on("click", e => {
-      console.log("send Document");
+
+      let file = this.el.inputDocument.files[0];
+      let base64 = this.el.imgPanelDocumentPreview.src;
+
+      if (file.type === 'application/pdf') {
+
+        Base64.toFile(base64).then(filePreview => {
+
+          Message.sendDocument(
+            this._contactActive.chatId,
+            this._user.email, file, filePreview,
+            this.el.infoPanelDocumentPreview.innerHTML
+          );
+
+        });
+
+      } else {
+
+        Message.sendDocument(
+          this._contactActive.chatId,
+          this._user.email, file,
+        );
+      }
+
+      this.el.btnClosePanelDocumentPreview.click();
+
     });
 
     //METODO PARA PROCURAR CONTATOS

@@ -75,4 +75,6 @@ export class Chat extends Model {
                 });
         });
     }
+
+
 }
