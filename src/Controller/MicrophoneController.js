@@ -60,36 +60,33 @@ export class MicrophoneController extends ClassEvent {
             });
 
             this._mediaRecorder.addEventListener('stop', e => {
+
                 let blob = new Blob(this._recordedChunks, {
                     type: this._mimeType
                 });
 
                 let filename = `rec${Date.now()}.webm`;
 
-                let file = new File([blob], filename, {
-                    type: this._mimeType,
-                    lastModified: Date.now()
-                });
+                let audioContext = new AudioContext();
 
-                console.log('READER FILE', file);
-
-                //IRA OUVIR O AUDIO APENAS PARA TESTE
                 let reader = new FileReader();
 
                 reader.onload = e => {
 
-                    let audio = new Audio(reader.result);
-                    audio.play();
-                }
+                    audioContext.decodeAudioData(reader.result).then(decode => {
 
-                reader.readAsDataURL(file);
+                        let file = new File([blob], filename, {
+                            type: this._mimeType,
+                            lastModified: Date.now()
+                        });
+
+                        this.trigger('recorded', file, decode);
+                    });
+                }
             });
             //iniciando o metodo RECORD
             this._mediaRecorder.start();
             this.startTimer();
-
-
-
         }
 
     }
